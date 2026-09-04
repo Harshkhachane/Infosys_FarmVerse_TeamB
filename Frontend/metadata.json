@@ -1,0 +1,6 @@
+{
+  "name": "AgriYield",
+  "description": "Precision agriculture advisor and farm analytics suite featuring satellite field mapping, soil health analysis, crop suitability calculators, water monitoring, and live market pricing.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
