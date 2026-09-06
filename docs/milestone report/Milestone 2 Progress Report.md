@@ -1,4 +1,4 @@
-# FarmVerse: Precision Agriculture Management Platform
+# FarmVerse: Intelligent Farm Operations Platform with Smart Agro Precision System
 
 ## Milestone 2 Progress Report
 
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-Milestone 2 focused on advancing the FarmVerse Precision Agriculture Management Platform from its initial development foundation toward a more structured and integrated application architecture.
+Milestone 2 focused on advancing the FarmVerse Intelligent Farm Operations Platform with Smart Agro Precision System from its initial development foundation toward a more structured and integrated application architecture.
 
 During this milestone, the team worked on backend endpoint development, API integration, frontend component development, identification of potential AI features, and project documentation. A structured REST API architecture was developed for the major FarmVerse modules, including authentication, farm management, crop management, dashboard, soil analysis, irrigation, fertilizer, weather, market prices, reports, notifications, and user profiles.
 
@@ -26,7 +26,7 @@ These activities established a clearer technical structure for continued develop
 
 ## 1. API Structure & Backend Endpoint Development
 
-**Owners:** Gopal Bawaskar, Samitha  
+**Owners:** Gopal Bawaskar  
 **Role:** Backend Developers  
 **Status:** Completed
 
@@ -70,7 +70,7 @@ The defined API structure provides a standardized communication layer between th
 
 ## 2. API Integration
 
-**Owners:** Gopal Bawaskar, Samitha  
+**Owners:** Gopal Bawaskar  
 **Role:** Backend Developers  
 **Status:** Completed
 
@@ -204,7 +204,7 @@ The presentation and documentation provide a clear record of project progress an
 | **Harsh Khachane** | Frontend / Documentation / Backend Support | **Completed** | Frontend components, PPT creation, README update, backend assistance |
 | **Gopal Bawaskar** | Backend Developer | **Completed** | Backend endpoints, API integration |
 | **Harshitha Kalivarapu** | Frontend Developer | **Completed** | Frontend component development |
-| **Samitha** | Backend Developer / AI Feature Support | **Completed** | Backend endpoints, API integration, AI feature identification |
+| **Samitha** | Backend Developer / AI Feature Support | **Completed** |  AI feature identification |
 | **Siva Kumar Reddy** | Frontend Developer | **Incomplete** | Contribution incomplete due to leaving the internship |
 
 ---
