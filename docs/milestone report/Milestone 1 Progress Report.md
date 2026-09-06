@@ -1,6 +1,6 @@
 # Milestone 1 Progress Report
 
-**Project:** FarmVerse – Precision Agriculture Management Platform  
+**Project:** FarmVerse – Intelligent Farm Operations Platform with Smart Agro Precision System  
 **Milestone:** 1  
 **Duration:** 29 June 2026 – 9 July 2026  
 **Status:** Completed
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-Milestone 1 established the foundational development environment for the FarmVerse Precision Agriculture Management Platform. During this milestone, the team focused on setting up the project repository, cloud database, database schema, backend framework, authentication mechanism, database connectivity, API endpoints, and initial frontend interfaces.
+Milestone 1 established the foundational development environment for the FarmVerse Intelligent Farm Operations Platform with Smart Agro Precision System. During this milestone, the team focused on setting up the project repository, cloud database, database schema, backend framework, authentication mechanism, database connectivity, API endpoints, and initial frontend interfaces.
 
 The team successfully divided responsibilities across Database Administration, Backend Development, and Frontend Development. The database infrastructure was established using MongoDB Atlas with schema validation, while the backend environment was planned and initialized using Spring Boot 3 with JWT-based authentication and user-management endpoints. The frontend team established the initial application theme, page structure, login and registration interfaces, and dashboard designs.
 
