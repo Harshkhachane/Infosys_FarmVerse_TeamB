@@ -1,4 +1,4 @@
-# FarmVerse: Precision Agriculture Management Platform
+# FarmVerse: Intelligent Farm Operations Platform with Smart Agro Precision System
 
 ## Milestone 3 Progress Report
 
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-Milestone 3 focused on the full-stack implementation and integration of the FarmVerse Precision Agriculture Management Platform. During this milestone, the team progressed from API and component-level development toward a functional application by implementing CRUD APIs and backend services, developing frontend components and dashboards, integrating frontend components with backend APIs, and implementing AI-based functionality.
+Milestone 3 focused on the full-stack implementation and integration of the FarmVerse Intelligent Farm Operations Platform with Smart Agro Precision System. During this milestone, the team progressed from API and component-level development toward a functional application by implementing CRUD APIs and backend services, developing frontend components and dashboards, integrating frontend components with backend APIs, and implementing AI-based functionality.
 
 The team worked on connecting the major layers of the application and converting the previously defined architecture into working functionality. Backend services were developed to support core application operations, while frontend components and dashboards were connected with backend APIs. The team also worked on AI-related features, including the implementation of **AI Kisan Mitra**, an AI-powered agricultural chatbot using the **Grok LLM**.
 
@@ -25,7 +25,7 @@ This milestone represents a major transition from API and architectural planning
 
 ## 1. CRUD APIs and Backend Services
 
-**Owners:** Gopal Bawaskar, Samitha  
+**Owners:** Gopal Bawaskar  
 **Role:** Backend Developers  
 **Status:** Completed
 
@@ -95,7 +95,7 @@ The frontend development provided users with functional interfaces for interacti
 
 ## 3. Frontend-Backend API Integration
 
-**Owners:** Harsh Khachane, Harshitha Kalivarapu, Gopal Bawaskar, Samitha  
+**Owners:** Harsh Khachane, Harshitha Kalivarapu, Gopal Bawaskar  
 **Status:** Completed
 
 ### Details
@@ -159,7 +159,7 @@ AI Kisan Mitra adds an intelligent conversational capability to FarmVerse and pr
 
 ---
 
-## 5. AI Feature Research & Integration
+## 5. AI Feature Documentation 
 
 **Owner:** Samitha  
 **Role:** Backend Developer / AI Feature Support  
@@ -199,7 +199,7 @@ The AI research provides a foundation for expanding intelligent capabilities wit
 | **Harsh Khachane** | Frontend / Development Support | **Completed** | Frontend components, dashboards, API integration, backend support |
 | **Gopal Bawaskar** | Backend / AI Developer | **Completed** | CRUD APIs, backend services, authentication, API integration, **AI Kisan Mitra chatbot using Grok LLM** |
 | **Harshitha Kalivarapu** | Frontend Developer | **Completed** | Frontend components, dashboards, API integration |
-| **Samitha** | Backend / AI Feature Support | **Completed** | CRUD APIs, backend services, API integration, AI feature research |
+| **Samitha** | Backend / AI Feature Support | **Completed** |AI feature Documentation |
 | **Siva Kumar Reddy** | Frontend Developer | **Incomplete** | Internship participation ended before completion of the milestone |
 
 ---
