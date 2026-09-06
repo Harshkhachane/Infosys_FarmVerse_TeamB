@@ -103,7 +103,7 @@ The frontend will start on the default Vite development server.
 
 ```bash
 cd backend
-mvnw.cmd spring-boot:run
+.\mvnw.cmd spring-boot:run
 ```
 
 The Spring Boot server will start locally.
