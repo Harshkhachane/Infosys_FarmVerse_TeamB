@@ -1,26 +1,5 @@
-<<<<<<< HEAD
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
 
-# Run and deploy your AI Studio app
-
-This contains everything you need to run your app locally.
-
-View your app in AI Studio: https://ai.studio/apps/2a327e54-74cc-40a5-80c9-71fdb90033a1
-
-## Run Locally
-
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
-=======
-# 🌱 FarmVerse – Precision Agriculture Management Platform
+# 🌱 FarmVerse – Intelligent farm operations platform with smart agro precision system
 
 ## 📖 Overview
 
@@ -174,9 +153,8 @@ The API documentation includes:
 
 ## 👥 Team
 
-**Project:** FarmVerse – Precision Agriculture Management Platform
+**Project:** FarmVerse – Intelligent farm operations platform with smart agro precision system
 
 **Organization:** Infosys Springboard Internship
 
 **Team:** Team B Group 1
->>>>>>> 19993613e34f66478bb230adfdddf8d65f88cac6
