@@ -26,11 +26,88 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     color: #191c1a;
   }
+
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button:focus {
+    outline: none;
+  }
+
+  button:focus-visible {
+    outline: 2px solid #154212;
+    outline-offset: 2px;
+  }
 }
 
+/* UI IMPROVEMENT: Subtle 3D look, shadows, spacing, rounded corners, transitions */
 .ambient-tonal-card {
-  box-shadow: 0px 4px 12px rgba(21, 66, 18, 0.04);
+  box-shadow: 0px 8px 20px rgba(21, 66, 18, 0.08), inset 0 2px 4px rgba(255, 255, 255, 0.4) !important;
+  border-radius: 1.5rem !important;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid rgba(255,255,255,0.6);
 }
+
+.ambient-tonal-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0px 12px 28px rgba(21, 66, 18, 0.12), inset 0 2px 4px rgba(255, 255, 255, 0.6) !important;
+}
+
+button {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease,
+    box-shadow 0.2s ease, transform 0.15s ease !important;
+}
+
+button:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(21, 66, 18, 0.12);
+}
+
+button:not(:disabled):active {
+  transform: translateY(0) scale(0.98) !important;
+  box-shadow: 0 2px 6px rgba(21, 66, 18, 0.1) !important;
+}
+
+/* Preserve brand colors on click/focus — prevents white flash */
+button.bg-primary,
+button.bg-\[\#2b5c27\],
+button.bg-green-700,
+button.bg-black {
+  color: #ffffff !important;
+}
+
+button.bg-primary:not(:disabled):hover,
+button.bg-\[\#2b5c27\]:not(:disabled):hover,
+button.bg-green-700:not(:disabled):hover {
+  background-color: #1a4f16 !important;
+  color: #ffffff !important;
+}
+
+button.bg-primary:not(:disabled):active,
+button.bg-primary:not(:disabled):focus-visible,
+button.bg-\[\#2b5c27\]:not(:disabled):active,
+button.bg-\[\#2b5c27\]:not(:disabled):focus-visible,
+button.bg-green-700:not(:disabled):active,
+button.bg-green-700:not(:disabled):focus-visible,
+button.bg-black:not(:disabled):active,
+button.bg-black:not(:disabled):focus-visible {
+  background-color: #123d10 !important;
+  color: #ffffff !important;
+}
+
+button.bg-\[\#EBF5EB\]:not(:disabled):active,
+button.bg-\[\#EBF5EB\]:not(:disabled):focus-visible {
+  background-color: #154212 !important;
+  color: #ffffff !important;
+}
+
+button.bg-white:not(:disabled):active,
+button.bg-white:not(:disabled):focus-visible {
+  background-color: #f1f4ef !important;
+  color: #154212 !important;
+}
+
 
 .material-symbols-outlined {
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;

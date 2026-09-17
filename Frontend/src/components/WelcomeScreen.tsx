@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile } from '../types';
 import { t } from '../utils/translations';
-import { loginUser, signupUser } from '../service/api';
+import { loginUser, signupUser, signupAdmin, loginAdmin } from '../service/api';
 
 const PROFILE_CACHE_KEY = 'agriyield-user-profiles';
 
@@ -38,6 +38,7 @@ export default function WelcomeScreen({ onLoginSuccess, profile }: WelcomeScreen
   
   // Login form states
   const [loginMethod, setLoginMethod] = useState<'email' | 'mobile'>('email');
+  const [loginType, setLoginType] = useState<'user' | 'admin'>('user'); // Admin or User Login Toggle
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   
@@ -50,6 +51,7 @@ export default function WelcomeScreen({ onLoginSuccess, profile }: WelcomeScreen
   const [showSmsPopup, setShowSmsPopup] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [regEmail, setRegEmail] = useState('');
+  
   // Register form fields
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -59,6 +61,15 @@ export default function WelcomeScreen({ onLoginSuccess, profile }: WelcomeScreen
   const [registerError, setRegisterError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [registerType, setRegisterType] = useState<'user' | 'admin'>('user');
+  
+  // Admin Registration States
+  const [adminName, setAdminName] = useState('');
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [adminConfirmPassword, setAdminConfirmPassword] = useState('');
+
+
 
   // Countdown timer for OTP
   useEffect(() => {
@@ -105,56 +116,81 @@ export default function WelcomeScreen({ onLoginSuccess, profile }: WelcomeScreen
     }
   };
 
-  // ---------------------------------------------
+ // ---------------------------------------------
   // Backend Integration: Email Login Submit
   // ---------------------------------------------
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setLoginError('');
+
     try {
-      const response = await loginUser({
-        email: loginEmail,
-        password: loginPassword,
-      });
+      const response = loginType === 'admin'
+        ? await loginAdmin({ email: loginEmail, password: loginPassword })
+        : await loginUser({ email: loginEmail, password: loginPassword });
 
-      if (response && (response.success || response.token || response.data)) {
-        if (response.token) {
-          localStorage.setItem('token', response.token);
+      if (!response?.success) {
+        // If user login fails, try admin credentials as fallback
+        if (loginType === 'user') {
+          try {
+            const adminResponse = await loginAdmin({ email: loginEmail, password: loginPassword });
+            if (adminResponse?.success) {
+              const adminRaw = adminResponse.data || {};
+              const adminUserData = {
+                name: adminRaw.name || loginEmail.split('@')[0],
+                fullName: adminRaw.fullName || adminRaw.name || loginEmail.split('@')[0],
+                email: adminRaw.email || loginEmail,
+                role: 'ADMIN',
+                avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(adminRaw.name || 'Admin')}&background=000&color=fff&size=150`,
+              };
+              const adminUserId = adminRaw.id || adminRaw._id || '';
+              writeProfileCache(loginEmail, adminUserData);
+              onLoginSuccess(selectedLang, adminUserData, adminUserId);
+              return;
+            }
+          } catch {
+            /* fall through to error */
+          }
         }
-        
-        // Extract user object from backend response
-        const rawUser = response.data || response.user || response;
-        
-        const userData = {
-          fullName: rawUser.fullName || rawUser.name || loginEmail.split('@')[0],
-          name: rawUser.fullName || rawUser.name || loginEmail.split('@')[0],
-          email: rawUser.email || loginEmail,
-          mobileNumber: rawUser.mobileNumber || rawUser.mobile || rawUser.phone || '',
-          phone: rawUser.mobileNumber || rawUser.mobile || rawUser.phone || '',
-          stateRegion: rawUser.stateRegion || rawUser.state || '',
-          district: rawUser.district || '',
-          village: rawUser.village || '',
-          streetAddress: rawUser.streetAddress || '',
-          role: rawUser.role || 'USER',
-          avatarUrl: rawUser.avatarUrl || 
-            `https://ui-avatars.com/api/?name=${encodeURIComponent(rawUser.name || loginEmail.split('@')[0])}&background=2b5c27&color=fff&size=150`
-        };
-
-        const userId = rawUser.id || rawUser._id || '';
-        writeProfileCache(loginEmail, userData);
-        onLoginSuccess(selectedLang, userData, userId);
-      } else {
-        setLoginError(response?.message || 'Invalid Login Credentials');
+        setLoginError(response?.message || 'Invalid email or password.');
+        return;
       }
+
+      const rawUser = response.data || response.user || {};
+      const isAdmin = loginType === 'admin' || rawUser.role === 'ADMIN';
+      const displayName = rawUser.fullName || rawUser.name || loginEmail.split('@')[0];
+
+      const userData = {
+        fullName: displayName,
+        name: displayName,
+        email: rawUser.email || loginEmail,
+        mobileNumber: rawUser.mobileNumber || rawUser.mobile || rawUser.phone || '',
+        phone: rawUser.mobileNumber || rawUser.mobile || rawUser.phone || '',
+        stateRegion: rawUser.stateRegion || rawUser.state || '',
+        district: rawUser.district || '',
+        village: rawUser.village || '',
+        streetAddress: rawUser.streetAddress || '',
+        role: isAdmin ? 'ADMIN' : (rawUser.role || 'USER'),
+        avatarUrl: rawUser.avatarUrl ||
+          `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=${isAdmin ? '000' : '2b5c27'}&color=fff&size=150`,
+      };
+
+      const userId = rawUser.id || rawUser._id || '';
+      writeProfileCache(loginEmail, userData);
+      onLoginSuccess(selectedLang, userData, userId);
     } catch (error: any) {
       console.error('Login Error:', error);
-      setLoginError(error?.response?.data?.message || 'Backend connection failed! Please ensure the server is running.');
+      const serverMessage = error?.response?.data?.message;
+      setLoginError(
+        serverMessage ||
+        (error?.code === 'ERR_NETWORK'
+          ? 'Backend connection failed! Please ensure the server is running on port 8081.'
+          : 'Login failed. Please try again.')
+      );
     } finally {
       setIsLoading(false);
     }
   };
-
   const handleGoogleSignIn = (e: React.MouseEvent) => {
     e.preventDefault();
     // Google sign-in is simulated; show a message
@@ -209,9 +245,54 @@ export default function WelcomeScreen({ onLoginSuccess, profile }: WelcomeScreen
     }
   };
 
+  // ---------------------------------------------
+  // Backend Integration: Admin Registration Submit
+  // ---------------------------------------------
+  const handleAdminRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (adminPassword !== adminConfirmPassword) {
+      setRegisterError('Admin passwords do not match.');
+      return;
+    }
+    setRegisterError('');
+    setIsLoading(true);
+
+    try {
+      const response = await signupAdmin({
+        name: adminName,
+        email: adminEmail,
+        password: adminPassword,
+      });
+
+      if (response && (response.success || response.data || response.message === 'Admin registered successfully')) {
+        const rawUser = response.data || response.user || {};
+        const userData = {
+          name: rawUser.name || adminName,
+          fullName: rawUser.name || adminName,
+          email: rawUser.email || adminEmail,
+          role: 'ADMIN',
+          avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(adminName)}&background=000&color=fff&size=150`
+        };
+        const userId = rawUser.id || rawUser._id || '';
+        writeProfileCache(adminEmail, userData);
+        onLoginSuccess(selectedLang, userData, userId);
+      } else {
+        setRegisterError(response?.message || 'Admin registration failed.');
+      }
+    } catch (error: any) {
+      console.error('Admin Registration Error:', error);
+      setRegisterError(error?.response?.data?.message || 'Backend server error.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Real-time password matching state
   const isPasswordMatching = regPassword && regConfirmPassword && regPassword === regConfirmPassword;
   const hasTypedBoth = regPassword.length > 0 && regConfirmPassword.length > 0;
+  
+  const isAdminPasswordMatching = adminPassword && adminConfirmPassword && adminPassword === adminConfirmPassword;
+  const adminHasTypedBoth = adminPassword.length > 0 && adminConfirmPassword.length > 0;
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-start overflow-x-hidden bg-gradient-to-br from-[#EBF5EB] via-[#F7FAF5] to-[#E9EFF2] pb-10">
@@ -310,6 +391,38 @@ export default function WelcomeScreen({ onLoginSuccess, profile }: WelcomeScreen
           {activeTab === 'login' ? (
             <div className="space-y-5">
               
+              {/* User vs Admin login toggle */}
+              <div className="flex bg-[#f1f4ef] p-1.5 rounded-2xl mb-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLoginType('user');
+                    setLoginError('');
+                  }}
+                  className={`flex-1 py-2 text-xs font-bold tracking-wider rounded-xl transition-all text-center cursor-pointer ${
+                    loginType === 'user'
+                      ? 'bg-white text-primary shadow-sm'
+                      : 'text-[#42493e] hover:text-primary hover:bg-white/40'
+                  }`}
+                >
+                  Farmer Login
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLoginType('admin');
+                    setLoginError('');
+                  }}
+                  className={`flex-1 py-2 text-xs font-bold tracking-wider rounded-xl transition-all text-center cursor-pointer ${
+                    loginType === 'admin'
+                      ? 'bg-white text-primary shadow-sm'
+                      : 'text-[#42493e] hover:text-primary hover:bg-white/40'
+                  }`}
+                >
+                  Admin Login
+                </button>
+              </div>
+
               {/* Inner login methods buttons (Email vs Mobile OTP) */}
               <div className="grid grid-cols-2 gap-2 p-1 bg-[#f7faf5] rounded-xl border border-[#ecefea]">
                 <button
@@ -401,7 +514,7 @@ export default function WelcomeScreen({ onLoginSuccess, profile }: WelcomeScreen
                   <button 
                     type="submit" 
                     disabled={isLoading}
-                    className="w-full bg-primary hover:bg-[#1a4f16] text-black font-bold text-sm py-3.5 rounded-xl hover:opacity-95 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-primary/25 disabled:opacity-50"
+                    className="w-full bg-primary hover:bg-[#1a4f16] text-white font-bold text-sm py-3.5 rounded-xl active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-primary/25 disabled:opacity-50"
                   >
                     <span>{isLoading ? "SIGNING IN..." : t("SIGN IN SECURELY", selectedLang)}</span>
                     <span className="material-symbols-outlined text-sm">login</span>
@@ -536,139 +649,267 @@ export default function WelcomeScreen({ onLoginSuccess, profile }: WelcomeScreen
             </div>
           ) : (
             /* REGISTRATION FORM */
-            <form onSubmit={handleRegisterSubmit} className="space-y-4" id="register-form">
-              {registerError && (
-                <div className="bg-[#FFF0F0] text-red-700 p-3 rounded-xl text-xs font-semibold border border-red-100 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-base">warning</span>
-                  <span>{registerError}</span>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[10px] font-extrabold tracking-widest text-[#72796e] mb-1.5 uppercase">
-                    {t("First Name", selectedLang)}
-                  </label>
-                  <input 
-                    type="text" 
-                    required
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-[#fcfdfe] border border-[#c2c9bb] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary transition-all text-[#191c1a]"
-                    placeholder="e.g. First Name" 
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-extrabold tracking-widest text-[#72796e] mb-1.5 uppercase">
-                    {t("Last Name", selectedLang)}
-                  </label>
-                  <input 
-                    type="text" 
-                    required
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-[#fcfdfe] border border-[#c2c9bb] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary transition-all text-[#191c1a]"
-                    placeholder="Last Name" 
-                  />
-                </div>
+            <div className="space-y-4">
+              <div className="flex bg-[#f1f4ef] p-1.5 rounded-2xl mb-4">
+                <button 
+                  type="button"
+                  onClick={() => setRegisterType('user')}
+                  className={`flex-1 py-2 text-xs font-bold tracking-wider rounded-xl transition-all text-center cursor-pointer ${
+                    registerType === 'user' 
+                      ? 'bg-white text-primary shadow-sm' 
+                      : 'text-[#42493e] hover:text-primary hover:bg-white/40'
+                  }`}
+                >
+                  {t("User Register", selectedLang)}
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setRegisterType('admin')}
+                  className={`flex-1 py-2 text-xs font-bold tracking-wider rounded-xl transition-all text-center cursor-pointer ${
+                    registerType === 'admin' 
+                      ? 'bg-white text-primary shadow-sm' 
+                      : 'text-[#42493e] hover:text-primary hover:bg-white/40'
+                  }`}
+                >
+                  {t("Admin Register", selectedLang)}
+                </button>
               </div>
 
+              {registerType === 'user' ? (
+              <form onSubmit={handleRegisterSubmit} className="space-y-4" id="register-form">
+                {registerError && (
+                  <div className="bg-[#FFF0F0] text-red-700 p-3 rounded-xl text-xs font-semibold border border-red-100 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-base">warning</span>
+                    <span>{registerError}</span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-  <label className="block text-[10px] font-extrabold tracking-widest text-[#72796e] mb-1.5 uppercase">
-    Email Address
-  </label>
-  <input 
-    type="email" 
-    required
-    value={regEmail}
-    onChange={(e) => setRegEmail(e.target.value)}
-    className="w-full px-4 py-2.5 bg-[#fcfdfe] border border-[#c2c9bb] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary transition-all text-[#191c1a]"
-    placeholder="e.g. xyz@gmail.com" 
-  />
-</div>
+                    <label className="block text-[10px] font-extrabold tracking-widest text-[#72796e] mb-1.5 uppercase">
+                      {t("First Name", selectedLang)}
+                    </label>
+                    <input 
+                      type="text" 
+                      required
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-[#fcfdfe] border border-[#c2c9bb] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary transition-all text-[#191c1a]"
+                      placeholder="e.g. First Name" 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-extrabold tracking-widest text-[#72796e] mb-1.5 uppercase">
+                      {t("Last Name", selectedLang)}
+                    </label>
+                    <input 
+                      type="text" 
+                      required
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-[#fcfdfe] border border-[#c2c9bb] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary transition-all text-[#191c1a]"
+                      placeholder="Last Name" 
+                    />
+                  </div>
+                </div>
+
+                    <div>
+    <label className="block text-[10px] font-extrabold tracking-widest text-[#72796e] mb-1.5 uppercase">
+      Email Address
+    </label>
+    <input 
+      type="email" 
+      required
+      value={regEmail}
+      onChange={(e) => setRegEmail(e.target.value)}
+      className="w-full px-4 py-2.5 bg-[#fcfdfe] border border-[#c2c9bb] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary transition-all text-[#191c1a]"
+      placeholder="e.g. xyz@gmail.com" 
+    />
+  </div>
 
 
-              <div>
-                <label className="block text-[10px] font-extrabold tracking-widest text-[#72796e] mb-1.5 uppercase">
-                  {t("Mobile Number", selectedLang)}
-                </label>
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#72796e] text-base">
-                    call
-                  </span>
+                <div>
+                  <label className="block text-[10px] font-extrabold tracking-widest text-[#72796e] mb-1.5 uppercase">
+                    {t("Mobile Number", selectedLang)}
+                  </label>
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#72796e] text-base">
+                      call
+                    </span>
+                    <input 
+                      type="tel" 
+                      required
+                      value={regMobile}
+                      onChange={(e) => setRegMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                      className="w-full pl-9 pr-4 py-2.5 bg-[#fcfdfe] border border-[#c2c9bb] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary transition-all text-[#191c1a] font-mono"
+                      placeholder="10-digit mobile number" 
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-extrabold tracking-widest text-[#72796e] mb-1.5 uppercase">
+                    {t("CHOOSE PASSWORD", selectedLang)}
+                  </label>
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#72796e] text-base">
+                      password
+                    </span>
+                    <input 
+                      type="password" 
+                      required
+                      value={regPassword}
+                      onChange={(e) => setRegPassword(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2.5 bg-[#fcfdfe] border border-[#c2c9bb] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary transition-all text-[#191c1a]"
+                      placeholder="Minimum 6 characters" 
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-extrabold tracking-widest text-[#72796e] mb-1.5 uppercase">
+                    {t("CONFIRM PASSWORD", selectedLang)}
+                  </label>
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#72796e] text-base">
+                      lock_reset
+                    </span>
+                    <input 
+                      type="password" 
+                      required
+                      value={regConfirmPassword}
+                      onChange={(e) => setRegConfirmPassword(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2.5 bg-[#fcfdfe] border border-[#c2c9bb] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary transition-all text-[#191c1a]"
+                      placeholder="Retype password to confirm" 
+                    />
+                  </div>
+                </div>
+
+                {/* Password Match Status Pill Indicator */}
+                {hasTypedBoth && (
+                  <div className={`p-2 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all ${
+                    isPasswordMatching
+                      ? 'bg-[#EBF5EB] text-[#154212] border-[#c4e3be]'
+                      : 'bg-[#FFF0F0] text-[#ba1a1a] border-[#fbc9c9]'
+                  }`}>
+                    <span className="material-symbols-outlined text-sm">
+                      {isPasswordMatching ? 'check_circle' : 'cancel'}
+                    </span>
+                    <span>
+                      {isPasswordMatching ? 'Passwords match correctly' : 'Passwords do not match yet'}
+                    </span>
+                  </div>
+                )}
+
+                <button 
+                  type="submit" 
+                  disabled={isLoading}
+                  className="w-full bg-black hover:bg-[#268b1f] text-white font-bold text-sm py-3 rounded-xl hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shadow-md shadow-primary/10 mt-2 disabled:opacity-50"
+                >
+                  {isLoading ? "CREATING ACCOUNT..." : t("CREATE COCKPIT ACCOUNT", selectedLang)}
+                </button>
+              </form>
+              ) : (
+              <form onSubmit={handleAdminRegisterSubmit} className="space-y-4" id="admin-register-form">
+                {registerError && (
+                  <div className="bg-[#FFF0F0] text-red-700 p-3 rounded-xl text-xs font-semibold border border-red-100 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-base">warning</span>
+                    <span>{registerError}</span>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-[10px] font-extrabold tracking-widest text-[#72796e] mb-1.5 uppercase">
+                    Admin Full Name
+                  </label>
                   <input 
-                    type="tel" 
+                    type="text" 
                     required
-                    value={regMobile}
-                    onChange={(e) => setRegMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                    className="w-full pl-9 pr-4 py-2.5 bg-[#fcfdfe] border border-[#c2c9bb] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary transition-all text-[#191c1a] font-mono"
-                    placeholder="10-digit mobile number" 
+                    value={adminName}
+                    onChange={(e) => setAdminName(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-[#fcfdfe] border border-[#c2c9bb] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary transition-all text-[#191c1a]"
+                    placeholder="Admin Name" 
                   />
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-[10px] font-extrabold tracking-widest text-[#72796e] mb-1.5 uppercase">
-                  {t("CHOOSE PASSWORD", selectedLang)}
-                </label>
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#72796e] text-base">
-                    password
-                  </span>
+                <div>
+                  <label className="block text-[10px] font-extrabold tracking-widest text-[#72796e] mb-1.5 uppercase">
+                    Admin Email Address
+                  </label>
                   <input 
-                    type="password" 
+                    type="email" 
                     required
-                    value={regPassword}
-                    onChange={(e) => setRegPassword(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2.5 bg-[#fcfdfe] border border-[#c2c9bb] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary transition-all text-[#191c1a]"
-                    placeholder="Minimum 6 characters" 
+                    value={adminEmail}
+                    onChange={(e) => setAdminEmail(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-[#fcfdfe] border border-[#c2c9bb] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary transition-all text-[#191c1a]"
+                    placeholder="admin@farmverse.com" 
                   />
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-[10px] font-extrabold tracking-widest text-[#72796e] mb-1.5 uppercase">
-                  {t("CONFIRM PASSWORD", selectedLang)}
-                </label>
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#72796e] text-base">
-                    lock_reset
-                  </span>
-                  <input 
-                    type="password" 
-                    required
-                    value={regConfirmPassword}
-                    onChange={(e) => setRegConfirmPassword(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2.5 bg-[#fcfdfe] border border-[#c2c9bb] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary transition-all text-[#191c1a]"
-                    placeholder="Retype password to confirm" 
-                  />
+                <div>
+                  <label className="block text-[10px] font-extrabold tracking-widest text-[#72796e] mb-1.5 uppercase">
+                    CHOOSE PASSWORD
+                  </label>
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#72796e] text-base">
+                      password
+                    </span>
+                    <input 
+                      type="password" 
+                      required
+                      value={adminPassword}
+                      onChange={(e) => setAdminPassword(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2.5 bg-[#fcfdfe] border border-[#c2c9bb] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary transition-all text-[#191c1a]"
+                      placeholder="Minimum 6 characters" 
+                    />
+                  </div>
                 </div>
-              </div>
 
-              {/* Password Match Status Pill Indicator */}
-              {hasTypedBoth && (
-                <div className={`p-2 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all ${
-                  isPasswordMatching
-                    ? 'bg-[#EBF5EB] text-[#154212] border-[#c4e3be]'
-                    : 'bg-[#FFF0F0] text-[#ba1a1a] border-[#fbc9c9]'
-                }`}>
-                  <span className="material-symbols-outlined text-sm">
-                    {isPasswordMatching ? 'check_circle' : 'cancel'}
-                  </span>
-                  <span>
-                    {isPasswordMatching ? 'Passwords match correctly' : 'Passwords do not match yet'}
-                  </span>
+                <div>
+                  <label className="block text-[10px] font-extrabold tracking-widest text-[#72796e] mb-1.5 uppercase">
+                    CONFIRM PASSWORD
+                  </label>
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#72796e] text-base">
+                      lock_reset
+                    </span>
+                    <input 
+                      type="password" 
+                      required
+                      value={adminConfirmPassword}
+                      onChange={(e) => setAdminConfirmPassword(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2.5 bg-[#fcfdfe] border border-[#c2c9bb] rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary transition-all text-[#191c1a]"
+                      placeholder="Retype password to confirm" 
+                    />
+                  </div>
                 </div>
+
+                {/* Password Match Status Pill Indicator */}
+                {adminHasTypedBoth && (
+                  <div className={`p-2 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all ${
+                    isAdminPasswordMatching
+                      ? 'bg-[#EBF5EB] text-[#154212] border-[#c4e3be]'
+                      : 'bg-[#FFF0F0] text-[#ba1a1a] border-[#fbc9c9]'
+                  }`}>
+                    <span className="material-symbols-outlined text-sm">
+                      {isAdminPasswordMatching ? 'check_circle' : 'cancel'}
+                    </span>
+                    <span>
+                      {isAdminPasswordMatching ? 'Passwords match correctly' : 'Passwords do not match yet'}
+                    </span>
+                  </div>
+                )}
+
+                <button 
+                  type="submit" 
+                  disabled={isLoading}
+                  className="w-full bg-blue-900 hover:bg-blue-800 text-white font-bold text-sm py-3 rounded-xl hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shadow-md shadow-primary/10 mt-2 disabled:opacity-50"
+                >
+                  {isLoading ? "CREATING ADMIN..." : "CREATE ADMIN ACCOUNT"}
+                </button>
+              </form>
               )}
-
-              <button 
-                type="submit" 
-                disabled={isLoading}
-                className="w-full bg-black hover:bg-[#268b1f] text-white font-bold text-sm py-3 rounded-xl hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shadow-md shadow-primary/10 mt-2 disabled:opacity-50"
-              >
-                {isLoading ? "CREATING ACCOUNT..." : t("CREATE COCKPIT ACCOUNT", selectedLang)}
-              </button>
-            </form>
+            </div>
           )}
 
         </div>

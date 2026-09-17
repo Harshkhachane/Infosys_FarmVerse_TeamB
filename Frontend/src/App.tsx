@@ -26,6 +26,7 @@ import NotificationsScreen from './components/NotificationsScreen';
 import ChatBot from './components/AIChat/ChatBot';
 import LandingScreen from './components/LandingScreen';
 import AdminDashboard from './components/AdminDashboard';
+import SubscriptionScreen from './components/SubscriptionScreen';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper: blank / empty profile (no hardcoded personal data)
@@ -220,7 +221,12 @@ export default function App() {
   // ── Not logged in: show landing or login ──
   if (!isLoggedIn) {
     if (!showLogin) {
-      return <LandingScreen onGetStarted={() => setShowLogin(true)} />;
+      return (
+        <>
+          <LandingScreen onGetStarted={() => setShowLogin(true)} />
+          <ChatBot />
+        </>
+      );
     }
 
     return (
@@ -266,7 +272,6 @@ export default function App() {
               theme={theme}
               setTheme={handleToggleTheme}
             />
-            <ChatBot />
           </div>
         );
 
@@ -371,6 +376,16 @@ export default function App() {
             profile={profile}
             selectedFarm={selectedFarm}
             onUpdateFarmCrop={handleUpdateFarmCrop}
+            onNavigate={setCurrentScreen}
+            onMenuClick={() => setIsMobileSidebarOpen(p => !p)}
+          />
+        );
+
+      case 'subscription':
+        return (
+          <SubscriptionScreen
+            profile={profile}
+            userId={currentUserId}
             onNavigate={setCurrentScreen}
             onMenuClick={() => setIsMobileSidebarOpen(p => !p)}
           />
@@ -657,6 +672,22 @@ export default function App() {
                 <span>{t("Saved Reports", lang)}</span>
               </div>
             </button>
+            <button 
+              onClick={() => {
+                setCurrentScreen('subscription');
+                if (isMobile) setIsMobileSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                currentScreen === 'subscription' 
+                  ? 'bg-primary text-white shadow-sm' 
+                  : 'text-[#42493e] hover:bg-[#f1f4ef]'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="material-symbols-outlined text-lg">card_membership</span>
+                <span>Business Subscription</span>
+              </div>
+            </button>
           </div>
         </nav>
 
@@ -710,7 +741,7 @@ export default function App() {
 
       <button 
         onClick={() => setIsMobileSidebarOpen(p => !p)}
-        className="md:hidden fixed bottom-6 right-6 z-50 bg-[#2b5c27] text-white w-14 h-14 rounded-full shadow-lg hover:bg-primary flex items-center justify-center cursor-pointer transition-all active:scale-95 border-2 border-white/20"
+        className="md:hidden fixed bottom-6 left-6 z-50 bg-[#2b5c27] text-white w-14 h-14 rounded-full shadow-lg hover:bg-primary flex items-center justify-center cursor-pointer transition-all active:scale-95 border-2 border-white/20"
         title="Open/Close Navigation Menu"
       >
         <span className="material-symbols-outlined text-2xl font-black">menu</span>
@@ -719,6 +750,8 @@ export default function App() {
       <div className="flex-grow flex flex-col min-w-0">
         {renderActiveScreen()}
       </div>
+
+      <ChatBot />
     </div>
   );
 }

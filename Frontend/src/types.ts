@@ -13,6 +13,15 @@ export interface UserProfile {
 
 export type FarmStatus = 'OPTIMAL' | 'ATTENTION';
 
+export interface Crop {
+  id: string;
+  farmId: string;
+  name: string;
+  category: string;
+  sowingDate: string;
+  status: 'PLANTED' | 'GROWING' | 'HARVESTED' | string;
+}
+
 export interface Farm {
   id: string;
   name: string;

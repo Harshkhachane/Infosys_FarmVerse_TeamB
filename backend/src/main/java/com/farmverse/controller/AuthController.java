@@ -13,6 +13,7 @@ import com.farmverse.dto.LoginRequest;
 import com.farmverse.dto.SignupRequest;
 import com.farmverse.dto.ApiResponse;
 import com.farmverse.service.UserService;
+import com.farmverse.service.AdminAuthService;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -21,6 +22,27 @@ public class AuthController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private AdminAuthService adminAuthService;
+
+    @PostMapping("/admin/signup")
+    public ResponseEntity<ApiResponse> adminSignup(@RequestBody SignupRequest signupRequest) {
+        ApiResponse response = adminAuthService.registerAdmin(signupRequest);
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response); // 200 OK
+        }
+        return ResponseEntity.badRequest().body(response); // 400 Bad Request
+    }
+
+    @PostMapping("/admin/login")
+    public ResponseEntity<ApiResponse> adminLogin(@RequestBody LoginRequest loginRequest) {
+        ApiResponse response = adminAuthService.loginAdmin(loginRequest);
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        }
+        return ResponseEntity.badRequest().body(response);
+    }
 
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse> signup(@RequestBody SignupRequest signupRequest) {
